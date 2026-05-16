@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced FPS Menu V3</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            background: transparent;
+            color: #fff;
+        }
+
+        .menu-wrapper {
+            display: none;
+            width: 860px; /* Widened for sliders */
+            height: 600px; /* Taller for more content */
+            animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+        }
+
+        .glass-container {
+            display: flex;
+            height: 100%;
+            background: rgb(15, 15, 20);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+            overflow: hidden;
+        }
+
+        /* Sidebar Styling */
+        .sidebar {
+            width: 250px;
+            background: rgb(15, 15, 20);
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 28px 16px;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .brand {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 36px;
+            padding-left: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #fff;
+            letter-spacing: -0.5px;
+        }
+
+        .brand i { color: #3b82f6; font-size: 1.4rem; }
+
+        .nav-btn {
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.5);
+            padding: 14px 16px;
+            border-radius: 10px;
+            text-align: left;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 8px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .nav-btn:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .nav-btn.active {
+            color: #fff;
+            background: rgba(59, 130, 246, 0.15);
+            border-left: 4px solid #3b82f6;
+        }
+
+        /* Content Area Styling */
+        .content {
+            flex: 1;
+            padding: 36px;
+            position: relative;
+            overflow-y: auto;
+            background-color: rgb(15, 15, 20);
+        }
+
+        .content::-webkit-scrollbar { width: 6px; }
+        .content::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 3px; }
+
+        .close-btn {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            background: rgba(255, 255, 255, 0.05);
+            border: none;
+            color: rgba(255, 255, 255, 0.6);
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-btn:hover { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+
+        .section-title { font-size: 1.5rem; font-weight: 600; margin-bottom: 8px; letter-spacing: -0.5px; }
+        .section-desc { font-size: 0.9rem; color: rgba(255, 255, 255, 0.5); margin-bottom: 28px; line-height: 1.5; }
+
+        /* Preset Cards Grid */
+        .presets-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+        .preset-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 14px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .preset-card:hover {
+            background: rgba(255, 255, 255, 0.06);
+            transform: translateY(-2px);
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .preset-card.active-preset {
+            border-color: #3b82f6;
+            background: rgba(59, 130, 246, 0.08);
+            box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.2);
+        }
+
+        .preset-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .preset-title { font-weight: 600; font-size: 1.1rem; }
+        
+        .badge { font-size: 0.65rem; padding: 5px 10px; border-radius: 6px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;}
+        .badge.quality { background: rgba(168, 85, 247, 0.2); color: #c084fc; }
+        .badge.balanced { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+        .badge.boost { background: rgba(234, 179, 8, 0.2); color: #facc15; }
+        .badge.max { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
+
+        .preset-desc { font-size: 0.8rem; color: rgba(255, 255, 255, 0.5); line-height: 1.5; }
+
+        /* Custom Toggles List */
+        .toggle-group-title {
+            font-size: 0.85rem;
+            color: #3b82f6;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+            margin: 24px 0 12px 0;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .toggle-group-title:first-child { margin-top: 0; }
+
+        .toggle-list { display: flex; flex-direction: column; gap: 10px; }
+
+        .toggle-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            padding: 16px 20px;
+            border-radius: 12px;
+        }
+
+        .toggle-info { display: flex; align-items: center; gap: 16px; }
+        .toggle-icon {
+            width: 38px; height: 38px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
+        .toggle-text .title { font-weight: 600; font-size: 0.95rem; margin-bottom: 2px; display: block;}
+        .toggle-text .desc { font-size: 0.75rem; color: rgba(255, 255, 255, 0.4); line-height: 1.3; }
+
+        /* Sliders Styling */
+        .slider-item {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            padding: 16px 20px;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .slider-value {
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            min-width: 50px;
+            text-align: center;
+        }
+
+        .custom-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+        }
+
+        .custom-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+            transition: transform 0.1s, background 0.2s;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+        }
+
+        .custom-slider::-webkit-slider-thumb:hover { transform: scale(1.2); background: #60a5fa; }
+
+        /* Utilities Buttons */
+        .btn-action {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            padding: 16px;
+            border-radius: 12px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .btn-action:hover { background: rgba(255, 255, 255, 0.1); transform: translateY(-2px); }
+        .btn-action.danger { background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3); color: #f87171; }
+        .btn-action.danger:hover { background: rgba(239, 68, 68, 0.2); }
+        .btn-action.warning { background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.3); color: #fbbf24; }
+        .btn-action.warning:hover { background: rgba(245, 158, 11, 0.2); }
+
+        /* Switch CSS */
+        .switch { position: relative; display: inline-block; width: 46px; height: 26px; flex-shrink: 0;}
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider-toggle { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(255, 255, 255, 0.1); transition: .3s; border-radius: 26px; }
+        .slider-toggle:before { position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px; background-color: #fff; transition: .3s; border-radius: 50%; }
+        input:checked + .slider-toggle { background-color: #3b82f6; }
+        input:checked + .slider-toggle:before { transform: translateX(20px); }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: absolute;
+            bottom: 24px;
+            right: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 100;
+        }
+
+        .toast {
+            background: rgba(20, 20, 25, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            padding: 14px 20px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .toast i { font-size: 1.1rem; }
+        .toast.success i { color: #4ade80; }
+        .toast.info i { color: #60a5fa; }
+        .toast.fadeOut { animation: slideOut 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+        @keyframes popIn { 0% { opacity: 0; transform: scale(0.95); } 100% { opacity: 1; transform: scale(1); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(50px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes slideOut { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(50px); } }
+    </style>
+</head>
+<body>
+
+    <div class="menu-wrapper" id="menu-wrapper">
+        <div class="glass-container">
+            
+            <div class="sidebar">
+                <div class="brand"><i class="fa-solid fa-layer-group"></i> EVO FPS</div>
+                <button class="nav-btn active" data-target="presets"><i class="fa-solid fa-wand-magic-sparkles"></i> Presets</button>
+                <button class="nav-btn" data-target="custom"><i class="fa-solid fa-sliders"></i> Graphics & World</button>
+                <button class="nav-btn" data-target="advanced"><i class="fa-solid fa-microchip"></i> Advanced Utils</button>
+            </div>
+
+            <div class="content">
+                <button class="close-btn" id="close-btn"><i class="fa-solid fa-xmark"></i></button>
+
+                <!-- Presets Tab -->
+                <div class="tab-content active" id="presets">
+                    <h2 class="section-title">Performance Presets</h2>
+                    <p class="section-desc">Select a global visual profile to instantly adjust your game's framerate and quality.</p>
+                    
+                    <div class="presets-grid">
+                        <div class="preset-card" data-level="cinematic">
+                            <div class="preset-header"><span class="preset-title">Cinematic</span><span class="badge quality">High Quality</span></div>
+                            <p class="preset-desc">Full shadow cascades, rich lighting, and maximum visual fidelity. For high-end PCs.</p>
+                        </div>
+                        <div class="preset-card active-preset" data-level="default">
+                            <div class="preset-header"><span class="preset-title">Standard</span><span class="badge balanced">Balanced</span></div>
+                            <p class="preset-desc">Default GTA V settings. A solid mix of performance and standard visual effects.</p>
+                        </div>
+                        <div class="preset-card" data-level="performance">
+                            <div class="preset-header"><span class="preset-title">Performance</span><span class="badge boost">FPS Boost</span></div>
+                            <p class="preset-desc">Reduces shadow resolution and limits distant light rendering for a noticeable FPS bump.</p>
+                        </div>
+                        <div class="preset-card" data-level="potato">
+                            <div class="preset-header"><span class="preset-title">Potato Mode</span><span class="badge max">Max FPS</span></div>
+                            <p class="preset-desc">Disables all shadows, disables distant lighting, and forces clear timecycles. Pure performance.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Custom Tab -->
+                <div class="tab-content" id="custom">
+                    <h2 class="section-title">Graphics & World</h2>
+                    <p class="section-desc">Fine-tune individual visual elements and world density settings.</p>
+                    
+                    <div class="toggle-list">
+                        <!-- Advanced Graphics -->
+                        <h3 class="toggle-group-title">Lighting & Effects</h3>
+                        <div class="toggle-item">
+                            <div class="toggle-info">
+                                <div class="toggle-icon"><i class="fa-solid fa-cloud-moon"></i></div>
+                                <div class="toggle-text"><span class="title">Render Shadows</span><span class="desc">Toggles cascade shadows for buildings and entities.</span></div>
+                            </div>
+                            <label class="switch"><input type="checkbox" id="toggle-shadows" checked><span class="slider-toggle"></span></label>
+                        </div>
+
+                        <div class="toggle-item">
+                            <div class="toggle-info">
+                                <div class="toggle-icon"><i class="fa-regular fa-lightbulb"></i></div>
+                                <div class="toggle-text"><span class="title">Distant City Lights</span><span class="desc">Renders streetlights and headlights from far away.</span></div>
+                            </div>
+                            <label class="switch"><input type="checkbox" id="toggle-lights" checked><span class="slider-toggle"></span></label>
+                        </div>
+
+                        <div class="toggle-item">
+                            <div class="toggle-info">
+                                <div class="toggle-icon"><i class="fa-solid fa-water"></i></div>
+                                <div class="toggle-text"><span class="title">Water Reflections</span><span class="desc">Render dynamic reflections and ripples on water surfaces.</span></div>
+                            </div>
+                            <label class="switch"><input type="checkbox" id="toggle-water" checked><span class="slider-toggle"></span></label>
+                        </div>
+
+                        <div class="toggle-item">
+                            <div class="toggle-info">
+                                <div class="toggle-icon"><i class="fa-solid fa-smog"></i></div>
+                                <div class="toggle-text"><span class="title">Volumetric Fog</span><span class="desc">Enable dense fog, weather details, and atmospheric bloom.</span></div>
+                            </div>
+                            <label class="switch"><input type="checkbox" id="toggle-fog" checked><span class="slider-toggle"></span></label>
+                        </div>
+
+                        <!-- Density Sliders -->
+                        <h3 class="toggle-group-title" style="margin-top: 32px;">World Density & LOD</h3>
+                        
+                        <div class="slider-item">
+                            <div class="slider-header">
+                                <div class="toggle-info">
+                                    <div class="toggle-icon"><i class="fa-solid fa-car"></i></div>
+                                    <div class="toggle-text"><span class="title">Traffic Density Multiplier</span><span class="desc">Adjust the amount of local AI vehicles spawning around you.</span></div>
+                                </div>
+                                <span class="slider-value" id="val-traffic">100%</span>
+                            </div>
+                            <input type="range" min="0" max="100" value="100" class="custom-slider" id="slider-traffic">
+                        </div>
+
+                        <div class="slider-item">
+                            <div class="slider-header">
+                                <div class="toggle-info">
+                                    <div class="toggle-icon"><i class="fa-solid fa-person-walking"></i></div>
+                                    <div class="toggle-text"><span class="title">Pedestrian Density Multiplier</span><span class="desc">Adjust the amount of AI pedestrians roaming the streets.</span></div>
+                                </div>
+                                <span class="slider-value" id="val-peds">100%</span>
+                            </div>
+                            <input type="range" min="0" max="100" value="100" class="custom-slider" id="slider-peds">
+                        </div>
+
+                        <div class="slider-item">
+                            <div class="slider-header">
+                                <div class="toggle-info">
+                                    <div class="toggle-icon"><i class="fa-solid fa-eye"></i></div>
+                                    <div class="toggle-text"><span class="title">Entity Render Distance (LOD)</span><span class="desc">How far away objects maintain high quality models.</span></div>
+                                </div>
+                                <span class="slider-value" id="val-lod">100%</span>
+                            </div>
+                            <input type="range" min="0" max="100" value="100" class="custom-slider" id="slider-lod">
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Utilities Tab -->
+                <div class="tab-content" id="advanced">
+                    <h2 class="section-title">Utilities & Memory</h2>
+                    <p class="section-desc">Advanced tools to troubleshoot bugs and clean up rendering memory during long sessions.</p>
+                    
+                    <div class="toggle-list" style="margin-top: 24px;">
+                        
+                        <div class="toggle-item" style="display:block; padding: 24px;">
+                            <div class="toggle-text" style="margin-bottom: 16px;">
+                                <span class="title" style="font-size: 1.1rem; color: #fff;">Clear VRAM Cache & Decals</span>
+                                <span class="desc" style="font-size: 0.85rem; display:block; margin-top: 4px;">Instantly removes blood, bullet holes, broken glass, footprints, dirt, and UI cache from your local memory. Excellent for fixing frame drops.</span>
+                            </div>
+                            <button class="btn-action danger" id="btn-clear-vram"><i class="fa-solid fa-broom"></i> Clean Memory Now</button>
+                        </div>
+
+                        <div class="toggle-item" style="display:block; padding: 24px;">
+                            <div class="toggle-text" style="margin-bottom: 16px;">
+                                <span class="title" style="font-size: 1.1rem; color: #fff;">Wipe Nearby Entities</span>
+                                <span class="desc" style="font-size: 0.85rem; display:block; margin-top: 4px;">Force deletes all unowned vehicles, broken objects, and dead pedestrians in a 100m radius around you.</span>
+                            </div>
+                            <button class="btn-action warning" id="btn-wipe-entities"><i class="fa-solid fa-dumpster-fire"></i> Wipe Nearby Area</button>
+                        </div>
+
+                        <div class="toggle-item" style="display:block; padding: 24px;">
+                            <div class="toggle-text" style="margin-bottom: 16px;">
+                                <span class="title" style="font-size: 1.1rem; color: #fff;">Fix Invisible Players</span>
+                                <span class="desc" style="font-size: 0.85rem; display:block; margin-top: 4px;">Attempts to reload player clothing models and force network entity syncing if players appear invisible.</span>
+                            </div>
+                            <button class="btn-action" id="btn-fix-players"><i class="fa-solid fa-user-astronaut"></i> Reload Player Models</button>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="toast-container" id="toast-container"></div>
+    </div>
+
+    <script>
+        const menuWrapper = document.getElementById('menu-wrapper');
+        const closeBtn = document.getElementById('close-btn');
+        const navBtns = document.querySelectorAll('.nav-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+        const presetCards = document.querySelectorAll('.preset-card');
+        const toastContainer = document.getElementById('toast-container');
+        
+        // Settings Elements
+        const shadowToggle = document.getElementById('toggle-shadows');
+        const lightToggle = document.getElementById('toggle-lights');
+        const waterToggle = document.getElementById('toggle-water');
+        const fogToggle = document.getElementById('toggle-fog');
+        
+        const sliderTraffic = document.getElementById('slider-traffic');
+        const sliderPeds = document.getElementById('slider-peds');
+        const sliderLod = document.getElementById('slider-lod');
+
+        const resourceName = window.GetParentResourceName ? window.GetParentResourceName() : 'evo_fps';
+
+        window.addEventListener('message', (event) => {
+            if (event.data.action === 'open') {
+                menuWrapper.style.display = 'block';
+            } else if (event.data.action === 'close') {
+                menuWrapper.style.display = 'none';
+            }
+        });
+
+        function postData(endpoint, data = {}) {
+            fetch(`https://${resourceName}/${endpoint}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json; charset=UTF-8' },
+                body: JSON.stringify(data)
+            }).catch(error => console.error('NUI Fetch Error:', error));
+        }
+
+        // Toast Notification System
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            const icon = type === 'success' ? 'fa-check-circle' : 'fa-circle-info';
+            toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span>${message}</span>`;
+            
+            toastContainer.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add('fadeOut');
+                toast.addEventListener('animationend', () => toast.remove());
+            }, 3000);
+        }
+
+        // Close logic
+        closeBtn.addEventListener('click', () => postData('closeMenu'));
+        document.addEventListener('keyup', (e) => { if (e.key === 'Escape') postData('closeMenu'); });
+
+        // Tab Navigation
+        navBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                navBtns.forEach(b => b.classList.remove('active'));
+                tabContents.forEach(t => t.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById(btn.getAttribute('data-target')).classList.add('active');
+            });
+        });
+
+        // Preset Selection with Visual Syncing
+        presetCards.forEach(card => {
+            card.addEventListener('click', () => {
+                presetCards.forEach(c => c.classList.remove('active-preset'));
+                card.classList.add('active-preset');
+
+                const level = card.getAttribute('data-level');
+                
+                // Visually sync the toggle switches based on preset
+                if(level === 'potato') {
+                    shadowToggle.checked = false; lightToggle.checked = false; 
+                    waterToggle.checked = false; fogToggle.checked = false;
+                    sliderTraffic.value = 0; sliderPeds.value = 0; sliderLod.value = 0;
+                } else if(level === 'performance') {
+                    shadowToggle.checked = true; lightToggle.checked = true;
+                    waterToggle.checked = false; fogToggle.checked = false;
+                    sliderTraffic.value = 50; sliderPeds.value = 50; sliderLod.value = 50;
+                } else {
+                    shadowToggle.checked = true; lightToggle.checked = true;
+                    waterToggle.checked = true; fogToggle.checked = true;
+                    sliderTraffic.value = 100; sliderPeds.value = 100; sliderLod.value = 100;
+                }
+
+                // Update UI text for sliders
+                document.getElementById('val-traffic').innerText = `${sliderTraffic.value}%`;
+                document.getElementById('val-peds').innerText = `${sliderPeds.value}%`;
+                document.getElementById('val-lod').innerText = `${sliderLod.value}%`;
+
+                postData('applyPreset', { level: level });
+                
+                const title = card.querySelector('.preset-title').innerText;
+                showToast(`Applied preset: ${title}`, 'success');
+            });
+        });
+
+        // Custom Toggles
+        const toggles = ['shadows', 'lights', 'water', 'fog'];
+        toggles.forEach(setting => {
+            document.getElementById(`toggle-${setting}`).addEventListener('change', function() {
+                postData('toggleSetting', { setting: setting, state: this.checked });
+                showToast(`${setting.charAt(0).toUpperCase() + setting.slice(1)} turned ${this.checked ? 'ON' : 'OFF'}`);
+            });
+        });
+
+        // Custom Sliders
+        const sliders = ['traffic', 'peds', 'lod'];
+        sliders.forEach(setting => {
+            const slider = document.getElementById(`slider-${setting}`);
+            const valDisplay = document.getElementById(`val-${setting}`);
+            
+            // Update visual percentage while dragging
+            slider.addEventListener('input', function() {
+                valDisplay.innerText = `${this.value}%`;
+            });
+            
+            // Only send post data when mouse is released to prevent crashing FiveM with events
+            slider.addEventListener('change', function() {
+                postData('updateSlider', { setting: setting, value: parseInt(this.value) });
+                showToast(`${setting.toUpperCase()} density updated to ${this.value}%`);
+            });
+        });
+
+        // Utilities Buttons
+        document.getElementById('btn-clear-vram').addEventListener('click', () => {
+            postData('clearVram');
+            showToast('Memory & Decals successfully cleared!', 'success');
+        });
+
+        document.getElementById('btn-wipe-entities').addEventListener('click', () => {
+            postData('wipeEntities');
+            showToast('Nearby entities have been wiped.', 'success');
+        });
+
+        document.getElementById('btn-fix-players').addEventListener('click', () => {
+            postData('fixPlayers');
+            showToast('Attempting to reload player models...', 'info');
+        });
+    </script>
+</body>
+</html>
